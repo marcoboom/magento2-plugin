@@ -234,6 +234,7 @@ abstract class PaymentMethod extends AbstractMethod
                 'lastName' => $arrBillingAddress['lastname'],
                 'phoneNumber' => $arrBillingAddress['telephone'],
                 'emailAddress' => $arrBillingAddress['email'],
+                'birthDate' => $this->getBirthDate($order),
             );
 
             $invoiceAddress = array(
@@ -381,6 +382,27 @@ abstract class PaymentMethod extends AbstractMethod
         $transaction = \Paynl\Transaction::start($data);
 
         return $transaction;
+    }
+
+    protected function getBirthDate(Order $order)
+    {
+        $additionalData = $order->getPayment()->getAdditionalInformation();
+
+        if (isset($additionalData['birth_date']) && \DateTime::createFromFormat('Y-m-d', $additionalData['birth_date'])) {
+            return $additionalData['birth_date'];
+        }
+
+        if ($birthDate = $order->getCustomerDob()) {
+            return $birthDate;
+        }
+
+        $customer = $order->getCustomer();
+
+        if ($customer && $customer->getData('dob')) {
+            return $customer->getData('dob');
+        }
+
+        return null;
     }
 
     public function getPaymentOptionId()
